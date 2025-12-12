@@ -1,0 +1,94 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model Role {
+  id    Int    @id @default(autoincrement()) @db.UnsignedInt
+  name  String @db.VarChar(255)
+  title String @db.VarChar(255)
+
+  users User[]
+
+  @@map("Role")
+}
+
+model User {
+  id       Int    @id @default(autoincrement()) @db.UnsignedInt
+  userName String @unique @db.VarChar(255)
+  email    String @unique @db.VarChar(255)
+  password String @db.VarChar(255)
+
+  // Diagram says tinyint, but Role.id is int in the diagram.
+  // Using UnsignedInt here so the FK types match cleanly.
+  roleId Int @default(1) @db.UnsignedInt
+  status Int @default(1) @db.UnsignedTinyInt
+
+  role           Role    @relation(fields: [roleId], references: [id])
+  mediaUploads   Media[]
+  authoredEvents Event[] @relation("EventAuthor")
+
+  @@map("User")
+}
+
+model Media {
+  id               Int      @id @default(autoincrement()) @db.UnsignedInt
+  name             String   @db.VarChar(255)
+  uploadedByUserId Int      @db.UnsignedInt
+  altText          String?  @db.VarChar(255)
+  createdAt        DateTime @default(now())
+
+  uploadedBy User @relation(fields: [uploadedByUserId], references: [id])
+
+  @@map("Media")
+}
+
+model Event {
+  id         Int @id @default(autoincrement()) @db.UnsignedInt
+
+  categoryId Int @db.UnsignedInt @map("categoryID")
+  authorId   Int @db.UnsignedInt @map("authorID")
+  cityId     Int @db.UnsignedInt @map("cityID")
+
+  name     String   @db.VarChar(255)
+  title    String   @db.VarChar(255)
+  time     DateTime @db.Timestamp(0)
+  location String   @db.VarChar(255)
+  slug     String   @unique @db.VarChar(255)
+
+  createdAt DateTime @default(now())
+
+  category Category @relation(fields: [categoryId], references: [id])
+  author   User     @relation("EventAuthor", fields: [authorId], references: [id])
+  city     City     @relation(fields: [cityId], references: [id])
+
+  @@map("Event")
+}
+
+model Category {
+  id   Int    @id @default(autoincrement()) @db.UnsignedInt
+  name String @db.VarChar(255)
+
+  events Event[]
+
+  @@map("category")
+}
+
+model City {
+  id    Int    @id @default(autoincrement()) @db.UnsignedInt
+  name  String @db.VarChar(255)
+  title String @db.VarChar(255)
+
+  events Event[]
+
+  @@map("City")
+}
